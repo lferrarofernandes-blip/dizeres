@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pistas Escondidas 2</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f0ede8; --paper:#faf9f6; --ink:#1e1a14; --ink2:#3a3428;
+  --muted:#8a8070; --line:#ddd8cc;
+  --green:#2e7d5e; --green-l:#e8f5ee; --green-m:#8cc8aa;
+  --red:#8a2820; --red-l:#fdf0ee; --red-m:#d4948c;
+  --amber:#8a5a10; --amber-l:#fdf4e0; --amber-m:#d4a84c;
+  --blue:#1e4a7a; --blue-l:#e8f0fa; --blue-m:#7aaad4;
+  --purple:#4a2878; --purple-l:#f0eaf8; --purple-m:#a888d4;
+}
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; font-size:15px; line-height:1.6; }
+.topbar { background:var(--ink); padding:12px 22px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:100; border-bottom:3px solid var(--purple); }
+.top-title { font-size:17px; font-weight:700; color:#fff; }
+.top-sub { font-size:11px; color:rgba(255,255,255,.45); font-weight:500; }
+.score-pill { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.2); border-radius:20px; padding:5px 14px; font-size:13px; font-weight:700; color:var(--purple-m); }
+.tab-row { display:flex; gap:4px; flex-wrap:wrap; padding:8px 22px 0; background:var(--ink); border-bottom:3px solid var(--purple); overflow-x:auto; }
+.ttab { background:transparent; border:1.5px solid rgba(255,255,255,.18); color:rgba(255,255,255,.55); font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px 6px 0 0; cursor:pointer; transition:all .15s; white-space:nowrap; margin-bottom:-3px; border-bottom-color:transparent; flex-shrink:0; }
+.ttab:hover { color:#fff; border-color:rgba(255,255,255,.4); }
+.ttab.active { background:var(--paper); border-color:var(--purple); border-bottom-color:var(--paper); color:var(--purple); }
+.screen { display:none; }
+.screen.active { display:block; animation:up .25s ease; }
+@keyframes up { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.main { max-width:760px; margin:0 auto; padding:28px 20px 80px; }
+.page-hdr { margin-bottom:24px; padding-bottom:18px; border-bottom:1.5px solid var(--line); }
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--purple); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.eyebrow::after { content:''; flex:1; height:1px; background:var(--purple-m); opacity:.4; }
+.page-title { font-size:26px; font-weight:800; color:var(--ink); line-height:1.2; margin-bottom:7px; }
+.page-desc { font-size:14px; color:var(--muted); line-height:1.65; max-width:540px; }
+.prog-wrap { margin-bottom:20px; }
+.prog-track { height:6px; background:var(--line); border-radius:6px; overflow:hidden; margin-bottom:5px; }
+.prog-fill { height:100%; background:var(--purple); border-radius:6px; transition:width .5s ease; }
+.prog-label { font-size:11px; color:var(--muted); font-weight:600; }
+.chat-container { background:var(--paper); border:1.5px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+.chat-header { background:var(--purple); padding:12px 16px; }
+.chat-context { font-size:12px; font-weight:700; color:rgba(255,255,255,.85); font-style:italic; }
+.chat-context strong { color:#fff; font-style:normal; }
+.chat-body { padding:16px 14px; display:flex; flex-direction:column; gap:10px; }
+.msg-wrap { display:flex; flex-direction:column; gap:3px; }
+.msg-wrap.right { align-items:flex-end; }
+.msg-name { font-size:11px; font-weight:700; color:var(--muted); padding:0 4px; }
+.msg { max-width:78%; padding:10px 14px; border-radius:16px; font-size:14px; font-weight:500; line-height:1.55; border:2px solid transparent; }
+.msg.left { background:#f0ece4; border-bottom-left-radius:4px; color:var(--ink2); }
+.msg.right { background:#e4dced; border-bottom-right-radius:4px; color:var(--ink); }
+.msg-obs { font-size:11.5px; font-style:italic; color:var(--muted); padding:0 4px; max-width:78%; }
+.msg-wrap.right .msg-obs { text-align:right; }
+.analysis { background:var(--paper); border:1.5px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+.analysis-title { font-size:14px; font-weight:800; color:var(--ink); margin-bottom:12px; }
+.pergunta-box { background:var(--blue-l); border:1.5px solid var(--blue-m); border-radius:12px; padding:12px 15px; margin-bottom:12px; font-size:13.5px; font-weight:700; color:var(--blue); line-height:1.55; }
+.opcoes { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+.opcao { background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:10px 14px; cursor:pointer; font-size:13.5px; font-weight:600; color:var(--ink2); transition:all .15s; display:flex; align-items:flex-start; gap:10px; text-align:left; font-family:inherit; line-height:1.5; }
+.opcao:hover:not(:disabled) { border-color:var(--purple); background:var(--purple-l); color:var(--purple); }
+.opcao:disabled { cursor:default; }
+.opcao.correta { background:var(--green-l); border-color:var(--green); color:var(--green); }
+.opcao.errada { background:var(--red-l); border-color:var(--red); color:var(--red); }
+.opcao.revelada { background:var(--green-l); border-color:var(--green); color:var(--green); }
+.opc-ltr { width:24px; height:24px; border-radius:50%; background:var(--bg); border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--muted); flex-shrink:0; }
+.fb-inline { border-radius:10px; padding:11px 14px; margin-bottom:12px; font-size:13px; font-weight:600; line-height:1.6; display:none; }
+.fb-inline.show { display:block; animation:up .2s ease; }
+.fb-c { background:var(--green-l); border:1.5px solid var(--green-m); color:#1e5a3a; }
+.fb-w { background:var(--red-l); border:1.5px solid var(--red-m); color:#5a1e1e; }
+.nota { width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 13px; font-family:inherit; font-size:14px; color:var(--ink); background:var(--bg); resize:vertical; min-height:52px; outline:none; transition:border .15s; line-height:1.55; }
+.nota:focus { border-color:var(--purple); background:#fff; }
+.nota::placeholder { color:#bbb; font-style:italic; }
+.nota-label { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:10px 0 5px; }
+.btn { font-family:inherit; font-size:14px; font-weight:700; padding:10px 22px; border-radius:10px; border:2px solid; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:7px; }
+.btn:hover { transform:translateY(-1px); }
+.btn-purple { background:var(--purple); border-color:var(--purple); color:#fff; }
+.btn-outline { background:transparent; border-color:var(--line); color:var(--muted); }
+.btn-outline:hover { border-color:var(--ink); color:var(--ink); }
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.gabarito { background:var(--green-l); border:1.5px solid var(--green-m); border-radius:12px; padding:14px 16px; margin-top:12px; display:none; }
+.gabarito.show { display:block; animation:up .25s ease; }
+.gabarito-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--green); margin-bottom:8px; }
+.gabarito-body { font-size:13.5px; color:#1e5a3a; line-height:1.7; }
+.gabarito-body strong { color:var(--green); }
+.pistas-box { background:var(--amber-l); border:1.5px solid var(--amber-m); border-radius:12px; padding:12px 15px; margin-bottom:14px; }
+.pistas-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--amber); margin-bottom:8px; }
+.pista-tag { display:inline-block; background:#fff; border:1.5px solid var(--amber-m); border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600; color:var(--amber); margin:3px 3px 3px 0; cursor:pointer; transition:all .15s; }
+.pista-tag:hover { background:var(--amber-l); }
+.pista-tag.sel { background:var(--amber-m); color:#fff; }
+.inst-box { background:var(--purple-l); border:1.5px solid var(--purple-m); border-radius:12px; padding:13px 16px; margin-bottom:16px; font-size:13.5px; color:var(--purple); font-weight:600; line-height:1.6; }
+.result-box { background:var(--paper); border:1.5px solid var(--line); border-radius:16px; padding:28px 24px; text-align:center; margin-bottom:20px; }
+.result-title { font-size:28px; font-weight:800; color:var(--ink); margin-bottom:6px; }
+.result-sub { font-size:14px; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+.result-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+@media(max-width:480px){ .result-grid{grid-template-columns:1fr} }
+.result-stat { background:var(--bg); border:1.5px solid var(--line); border-radius:12px; padding:14px; }
+.result-num { font-size:30px; font-weight:800; color:var(--purple); }
+.result-lbl { font-size:12px; color:var(--muted); font-weight:600; margin-top:2px; }
+.timer { position:fixed; bottom:20px; right:20px; background:var(--ink); border:2px solid var(--purple); border-radius:12px; padding:10px 14px; text-align:center; min-width:80px; z-index:200; }
+.timer-val { font-size:20px; font-weight:800; color:#fff; letter-spacing:.05em; }
+.timer-lbl { font-size:9px; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }
+.timer-btns { display:flex; gap:4px; margin-top:6px; }
+.tbtn { flex:1; padding:4px; border-radius:6px; border:none; font-size:10px; font-weight:700; cursor:pointer; }
+.tbtn-go { background:var(--purple); color:#fff; }
+.tbtn-rst { background:rgba(255,255,255,.1); color:rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+
+<div class="timer">
+  <div class="timer-lbl">Sessão</div>
+  <div class="timer-val" id="timerVal">00:00</div>
+  <div class="timer-btns">
+    <button class="tbtn tbtn-go" id="timerBtn" onclick="toggleTimer()">Iniciar</button>
+    <button class="tbtn tbtn-rst" onclick="resetTimer()">Zerar</button>
+  </div>
+</div>
+
+<nav class="topbar">
+  <div>
+    <div class="top-title">Pistas Escondidas 2</div>
+    <div class="top-sub">Novas histórias para o detetive de emoções</div>
+  </div>
+  <div class="score-pill" id="scoreDisplay">0 pontos</div>
+</nav>
+<div class="tab-row">
+  <button class="ttab active" onclick="go('inicio')">Início</button>
+  <button class="ttab" onclick="go('c1')">História 1</button>
+  <button class="ttab" onclick="go('c2')">História 2</button>
+  <button class="ttab" onclick="go('c3')">História 3</button>
+  <button class="ttab" onclick="go('c4')">História 4</button>
+  <button class="ttab" onclick="go('c5')">História 5</button>
+  <button class="ttab" onclick="go('c6')">História 6</button>
+  <button class="ttab" onclick="go('c7')">História 7</button>
+  <button class="ttab" onclick="go('c8')">História 8</button>
+  <button class="ttab" onclick="go('resultado')">Resultado</button>
+</div>
+
+<!-- INÍCIO -->
+<div class="screen active" id="s-inicio">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">Parte 2</div>
+      <div class="page-title">Pistas Escondidas 2</div>
+      <div class="page-desc">Você já sabe ler as pistas: mensagens curtas, demora para responder, palavras que não combinam com o comportamento. Agora vêm 8 histórias novas para testar seu radar de detetive!</div>
+    </div>
+    <div class="inst-box">Lembre das perguntas do detetive: o que a pessoa disse? O comportamento combina com as palavras? O que aconteceu antes? O que ela realmente quis dizer?</div>
+    <div class="btn-row"><button class="btn btn-purple" onclick="go('c1')">Começar</button></div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 1 -->
+<div class="screen" id="s-c1">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 1 de 8</div>
+      <div class="page-title">O celular novo</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:12%"></div></div><div class="prog-label">História 1 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Manu e Rafaela queriam o mesmo modelo de celular há meses. Os pais de Manu deram o celular de presente. Rafaela ainda está esperando o dela.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Manu</div>
+          <div class="msg left">RAFA! Ganhei o celular! Aquele que a gente queria! Olha a foto!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Rafaela</div>
+          <div class="msg right">que legal</div>
+          <div class="msg-obs">Respondeu sem letra maiúscula, sem exclamação, sem emoji</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Manu</div>
+          <div class="msg left">Você não vai acreditar na câmera! Quer ver as fotos que tirei?</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Rafaela</div>
+          <div class="msg right">depois eu vejo, tô ocupada</div>
+          <div class="msg-obs">Mas dois minutos depois postou uma foto nos stories</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que provavelmente está acontecendo com Rafaela?</div>
+      <div class="opcoes" id="opcs1"></div>
+      <div class="fb-inline" id="fb1"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Resposta seca sem animação</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Disse que estava ocupada mas postou stories</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">As duas queriam o mesmo celular</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ela ainda não ganhou o dela</span>
+      </div>
+      <div class="nota-label">Como Manu poderia agir para cuidar da amizade?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c2')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que está acontecendo:</strong> Rafaela provavelmente está com inveja ou tristeza, porque queria o mesmo celular e ainda não ganhou. A mentira de estar ocupada (desmentida pelos stories) mostra que ela está evitando dividir a alegria de Manu, o que é um sentimento difícil mas humano.<br><br>
+          <strong>O que Manu poderia fazer:</strong> diminuir a empolgação com Rafaela por enquanto e mostrar que a amizade importa mais que o celular: "Rafa, quando você ganhar o seu a gente tira mil fotos juntas! Vai ser rapidinho!"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 2 -->
+<div class="screen" id="s-c2">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 2 de 8</div>
+      <div class="page-title">A avó que diz que está tudo bem</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:25%"></div></div><div class="prog-label">História 2 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Antes, Isadora visitava a avó todo domingo. Nos últimos dois meses, foi apenas uma vez porque a rotina ficou cheia.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Isadora</div>
+          <div class="msg right">Vó, esse domingo não vou conseguir ir de novo, tenho trabalho da escola. Desculpa!</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Avó</div>
+          <div class="msg left">Não precisa se preocupar comigo não, minha filha. Eu estou bem aqui. Vai cuidar dos seus estudos que é o importante.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Avó</div>
+          <div class="msg left">Fiz aquele bolo de laranja que você gosta. Depois congelo um pedaço para quando você aparecer, sabe lá quando né.</div>
+          <div class="msg-obs">Mandou uma foto do bolo inteiro na mesa, com dois pratos arrumados</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que a avó realmente está sentindo e comunicando?</div>
+      <div class="opcoes" id="opcs2"></div>
+      <div class="fb-inline" id="fb2"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Fez o bolo favorito dela mesmo sem visita</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">A mesa com dois pratos arrumados</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "sabe lá quando né" no final</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">As visitas eram todo domingo antes</span>
+      </div>
+      <div class="nota-label">O que Isadora poderia fazer?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c3')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que a avó sente:</strong> saudade. As palavras dizem "não se preocupe", mas o bolo favorito, os dois pratos na mesa e o "sabe lá quando né" mostram que ela sente falta das visitas e esperava por Isadora. Pessoas mais velhas às vezes não pedem diretamente para não incomodar.<br><br>
+          <strong>O que Isadora poderia fazer:</strong> reconhecer a saudade e propor algo concreto: "Vó, tô com saudade também! Esse domingo não dá, mas quarta depois da escola eu passo aí para comer esse bolo, pode ser?"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 3 -->
+<div class="screen" id="s-c3">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 3 de 8</div>
+      <div class="page-title">A foto do passeio</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:37%"></div></div><div class="prog-label">História 3 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Cinco amigas foram ao shopping no sábado. Melissa não foi chamada. Uma delas postou a foto do grupo e Melissa comentou.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Post de Amanda</div>
+          <div class="msg left">Foto: as cinco amigas no shopping. Legenda: "Sábado perfeito com as melhores!"</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Melissa comentou</div>
+          <div class="msg right">Que lindas! Parece que foi divertido!</div>
+          <div class="msg-obs">Comentou 1 minuto depois do post. De madrugada, ainda estava online</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Amanda respondeu</div>
+          <div class="msg left">Foi demais!! Próxima vez você vem!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Melissa</div>
+          <div class="msg right">Claro! Sem problemas!</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que os comentários de Melissa provavelmente escondem?</div>
+      <div class="opcoes" id="opcs3"></div>
+      <div class="fb-inline" id="fb3"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Comentou 1 minuto depois do post</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Estava online de madrugada</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "parece que foi divertido"</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ela não foi chamada para o passeio</span>
+      </div>
+      <div class="nota-label">Se você fosse uma das amigas do grupo e visse isso, o que faria?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c4')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que os comentários escondem:</strong> Melissa provavelmente ficou magoada por não ser chamada. Comentar 1 minuto depois, de madrugada, mostra que ela estava acompanhando. O "parece que foi divertido" tem um tom de quem ficou de fora. O "Claro! Sem problemas!" educado esconde a tristeza.<br><br>
+          <strong>O que uma amiga atenta faria:</strong> chamar Melissa no privado: "Mel, desculpa não termos te chamado, foi combinado de última hora. Vamos marcar algo juntas essa semana?"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 4 -->
+<div class="screen" id="s-c4">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 4 de 8</div>
+      <div class="page-title">O empréstimo do moletom</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:50%"></div></div><div class="prog-label">História 4 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> O moletom azul é o favorito de Laís, ela usa quase todo dia. A prima pediu emprestado para uma viagem de uma semana.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Prima</div>
+          <div class="msg left">Laís, me empresta seu moletom azul pra viagem? Vai fazer frio lá!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Laís</div>
+          <div class="msg right">Ah... o azul? Tá, pode levar.</div>
+          <div class="msg-obs">Demorou para responder e começou com "Ah..."</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Prima</div>
+          <div class="msg left">Obrigada!! Você é a melhor prima do mundo!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Laís</div>
+          <div class="msg right">Só cuida bem dele tá? É meu preferido.</div>
+          <div class="msg-obs">Mandou mais duas mensagens depois: "Não deixa cair nada nele" e "Qualquer coisa me avisa"</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que Laís realmente sente sobre emprestar o moletom?</div>
+      <div class="opcoes" id="opcs4"></div>
+      <div class="fb-inline" id="fb4"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "Ah..." hesitante no início</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Demorou para responder</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">As três mensagens de cuidado</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">É o moletom que ela usa quase todo dia</span>
+      </div>
+      <div class="nota-label">Como a prima poderia perceber e responder melhor?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c5')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que Laís sente:</strong> ela não queria emprestar mas não conseguiu dizer não. O "Ah..." hesitante, a demora e principalmente as três mensagens de cuidado mostram preocupação e arrependimento. Ela disse sim com a boca mas não com o coração.<br><br>
+          <strong>Como a prima poderia responder:</strong> perceber a hesitação e abrir espaço: "Laís, se você preferir não emprestar o seu favorito, tudo bem mesmo! Posso levar outro casaco. Não quero que você fique preocupada a viagem toda."
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 5 -->
+<div class="screen" id="s-c5">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 5 de 8</div>
+      <div class="page-title">A festa sem convite</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:62%"></div></div><div class="prog-label">História 5 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Enzo vai a uma festa no sábado. O melhor amigo dele, Davi, não foi convidado pelo aniversariante. Os dois conversam na sexta.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Enzo</div>
+          <div class="msg right">Cara, nem sei se vou nessa festa amanhã... deve ser sem graça.</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Davi</div>
+          <div class="msg left">Vai sim! Vai lá e se diverte! Eu nem queria ir mesmo, festa não é minha praia.</div>
+          <div class="msg-obs">Davi adora festas e sempre foi o primeiro a chegar em todas</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Enzo</div>
+          <div class="msg right">Sério? Você sempre curtiu festa...</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Davi</div>
+          <div class="msg left">Mudei. Prefiro ficar em casa agora. Vai lá, depois me conta.</div>
+          <div class="msg-obs">Respondeu rápido e mudou de assunto em seguida</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">Por que Davi disse que "nem queria ir mesmo"?</div>
+      <div class="opcoes" id="opcs5"></div>
+      <div class="fb-inline" id="fb5"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Davi sempre adorou festas</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Ele não foi convidado</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">A mudança repentina de opinião</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Mudou de assunto rápido</span>
+      </div>
+      <div class="nota-label">O que Enzo poderia dizer para o amigo?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c6')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>Por que Davi disse isso:</strong> para proteger o próprio orgulho. Dizer "nem queria ir" dói menos do que admitir "fiquei triste por não ser convidado". A pista mais forte é o contraste: ele sempre amou festas e de repente "mudou". Mudanças repentinas assim geralmente escondem mágoa.<br><br>
+          <strong>O que Enzo poderia dizer:</strong> "Davi, sei que você curte festa. Se você ficou chateado por não ser chamado, é normal, eu ficaria também. Que tal a gente fazer algo maneiro no sábado juntos em vez disso?"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 6 -->
+<div class="screen" id="s-c6">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 6 de 8</div>
+      <div class="page-title">O "faz o que achar melhor"</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:75%"></div></div><div class="prog-label">História 6 de 8</div></div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> A mãe de Alícia convidou a filha para o cinema no domingo, programa que elas faziam juntas desde pequena. Alícia recebeu um convite das amigas para o mesmo dia.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Alícia</div>
+          <div class="msg right">Mãe, as meninas me chamaram pra ir no parque domingo. Posso ir com elas em vez do cinema?</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Mãe</div>
+          <div class="msg left">Faz o que você achar melhor, filha.</div>
+          <div class="msg-obs">Respondeu com uma mensagem só, sendo que sempre responde com áudios longos</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Alícia</div>
+          <div class="msg right">Então vou com elas! Valeu mãe!</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Mãe</div>
+          <div class="msg left">Tá bom.</div>
+          <div class="msg-obs">No domingo, a mãe foi vista assistindo em casa o mesmo filme que iam ver no cinema</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que o "faz o que você achar melhor" da mãe realmente significa?</div>
+      <div class="opcoes" id="opcs6"></div>
+      <div class="fb-inline" id="fb6"></div>
+      <div class="pistas-box">
+        <div class="pistas-title">Quais pistas te ajudaram? Clique nelas</div>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Mensagem curta de quem manda áudios longos</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">O "Tá bom" seco</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Era um programa especial das duas</span>
+        <span class="pista-tag" onclick="this.classList.toggle('sel')">Assistiu o filme sozinha em casa</span>
+      </div>
+      <div class="nota-label">O que Alícia poderia ter feito para equilibrar as duas coisas?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c7')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que significa:</strong> a mãe ficou triste mas não quis atrapalhar a filha. O "faz o que achar melhor" era liberdade de verdade, mas com decepção junto. As pistas: a resposta curta incomum, o "Tá bom" seco e assistir o filme sozinha, mostrando que o programa importava para ela.<br><br>
+          <strong>O que Alícia poderia fazer:</strong> propor os dois: "Mãe, posso ir no parque com as meninas de tarde e a gente vai no cinema na sessão da noite? Ou no outro fim de semana só nós duas?" Perceber que o programa era especial para a mãe muda tudo.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 7 -->
+<div class="screen" id="s-c7">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 7 de 8</div>
+      <div class="page-title">O "já nem lembro disso"</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:87%"></div></div><div class="prog-label">História 7 de 8</div></div>
+    <div class="inst-box">Atenção: nesta história, preste atenção no que a pessoa faz depois de dizer que esqueceu!</div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Semana passada, Caio zombou do tênis de Vitor na frente da turma e todos riram. Hoje os dois se falaram pela primeira vez desde então.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap left">
+          <div class="msg-name">Caio</div>
+          <div class="msg left">E aí Vitor! Sumiu! Tá tudo certo entre a gente né? Aquela zoeira do tênis foi brincadeira!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Vitor</div>
+          <div class="msg right">Ah, aquilo? Já nem lembro disso. Tá tudo certo.</div>
+          <div class="msg-obs">Desde aquele dia, Vitor não usou mais o tênis e parou de sentar perto de Caio</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Caio</div>
+          <div class="msg left">Boa! Senta com a gente no almoço então!</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Vitor</div>
+          <div class="msg right">Hoje não dá, combinei com outro pessoal.</div>
+          <div class="msg-obs">Foi a terceira vez seguida que ele recusou</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">Vitor disse que "já nem lembra". O que o comportamento dele mostra?</div>
+      <div class="opcoes" id="opcs7"></div>
+      <div class="fb-inline" id="fb7"></div>
+      <div class="nota-label">O que Caio deveria fazer para consertar de verdade?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('c8')">Próxima história</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>O que o comportamento mostra:</strong> Vitor lembra sim, e ainda dói. Ele parou de usar o tênis, se afastou e recusou o almoço três vezes. Quando alguém diz "já nem lembro" mas muda o comportamento depois do ocorrido, a mágoa continua ali.<br><br>
+          <strong>O que Caio deveria fazer:</strong> pedir desculpas de verdade em vez de chamar de "zoeira": "Vitor, eu percebi que você se afastou depois daquele dia. Aquilo não foi legal da minha parte, te expus na frente de todo mundo. Me desculpa de verdade." Desculpa sincera reconhece o erro, não o diminui.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 8 -->
+<div class="screen" id="s-c8">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">História 8 de 8</div>
+      <div class="page-title">A carona negada</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:100%"></div></div><div class="prog-label">Última história!</div></div>
+    <div class="inst-box">Atenção: esta história pode ter mais de uma leitura possível!</div>
+    <div class="chat-container">
+      <div class="chat-header"><div class="chat-context"><strong>Contexto:</strong> Depois do treino, a mãe de Beatriz sempre dá carona para Larissa. Hoje, Beatriz avisou que não daria para levar Larissa.</div></div>
+      <div class="chat-body">
+        <div class="msg-wrap right">
+          <div class="msg-name">Beatriz</div>
+          <div class="msg right">Lari, hoje minha mãe não vai conseguir te dar carona, a gente vai direto pro dentista. Foi mal!</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Larissa</div>
+          <div class="msg left">De boa! Eu vou a pé, nem é longe. Até gosto de caminhar!</div>
+          <div class="msg-obs">O caminho leva 40 minutos a pé e estava começando a chover</div>
+        </div>
+        <div class="msg-wrap right">
+          <div class="msg-name">Beatriz</div>
+          <div class="msg right">Tem certeza? Tá chovendo...</div>
+        </div>
+        <div class="msg-wrap left">
+          <div class="msg-name">Larissa</div>
+          <div class="msg left">Certeza! Relaxa! Bom dentista pra vocês!</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis">
+      <div class="analysis-title">Análise</div>
+      <div class="pergunta-box">O que pode estar por trás do "de boa" de Larissa?</div>
+      <div class="opcoes" id="opcs8"></div>
+      <div class="fb-inline" id="fb8"></div>
+      <div class="nota-label">Por que essa história é diferente das outras? O que muda na leitura?</div>
+      <textarea class="nota" placeholder="Escreva aqui..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="toggleGab(this)">Ver gabarito</button>
+        <button class="btn btn-purple" onclick="go('resultado')">Ver resultado</button>
+      </div>
+      <div class="gabarito">
+        <div class="gabarito-title">Gabarito</div>
+        <div class="gabarito-body">
+          <strong>Duas leituras possíveis:</strong> Larissa pode estar sendo genuinamente compreensiva, sem mágoa nenhuma, afinal dentista é imprevisto e não escolha. Ou pode estar disfarçando o desapontamento de caminhar 40 minutos na chuva para não fazer a amiga se sentir culpada.<br><br>
+          <strong>O que muda nesta história:</strong> diferente das outras, aqui não houve exclusão nem injustiça. Beatriz teve um motivo real e avisou com educação. Quando o motivo é legítimo, o "de boa" tem mais chance de ser verdadeiro. Nem toda resposta tranquila esconde mágoa! O detetive de emoções também precisa saber quando NÃO há pista escondida.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div class="screen" id="s-resultado">
+  <div class="main">
+    <div class="page-hdr">
+      <div class="eyebrow">Resultado final</div>
+      <div class="page-title">Você terminou!</div>
+    </div>
+    <div class="result-box">
+      <div class="result-title">Detetive nível 2!</div>
+      <div class="result-sub">Você analisou 8 histórias novas e aprendeu algo importante: nem toda resposta tranquila esconde mágoa, mas quando as palavras e o comportamento não combinam, vale investigar!</div>
+      <div class="result-grid">
+        <div class="result-stat"><div class="result-num">8</div><div class="result-lbl">Histórias analisadas</div></div>
+        <div class="result-stat"><div class="result-num" id="pontosFinais">0</div><div class="result-lbl">Pontos conquistados</div></div>
+      </div>
+    </div>
+    <div style="background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:20px">
+      <div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:12px">Pistas novas que você aprendeu hoje</div>
+      <div style="font-size:13.5px;color:var(--ink2);line-height:1.9">
+        Dizer que está ocupada mas aparecer online em outro lugar<br>
+        Preparar algo especial mesmo dizendo "não se preocupe"<br>
+        Comentar rápido demais no post de algo que a excluiu<br>
+        Aceitar um pedido com hesitação e mandar mensagens de preocupação depois<br>
+        Mudar de opinião de repente sobre algo que sempre amou<br>
+        Dizer "já nem lembro" mas mudar o comportamento desde o ocorrido<br>
+        E a mais importante: saber reconhecer quando NÃO há mágoa escondida
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-purple" onclick="go('inicio')">Jogar novamente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TABS=['inicio','c1','c2','c3','c4','c5','c6','c7','c8','resultado'];
+function go(id){
+  TABS.forEach(t=>document.getElementById('s-'+t).classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.querySelectorAll('.ttab').forEach((b,i)=>b.classList.toggle('active',TABS[i]===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='resultado') document.getElementById('pontosFinais').textContent=score;
+}
+let score=0;
+function addScore(n){ score+=n; document.getElementById('scoreDisplay').textContent=score+' pontos'; }
+
+const QUIZ={
+  1:{ops:["Ela está mesmo ocupada e vai ver as fotos depois","Ela está com inveja ou tristeza porque queria o mesmo celular","Ela não gosta mais de celulares"],c:1,
+     fbc:"A resposta seca, a desculpa de estar ocupada desmentida pelos stories e o contexto de que ela queria o mesmo celular apontam para um sentimento difícil de admitir.",
+     fbw:"Olhe a contradição: disse que estava ocupada mas postou stories dois minutos depois. Junte com o contexto: ela queria o mesmo celular e ainda não ganhou."},
+  2:{ops:["Ela está bem e realmente não quer atrapalhar os estudos","Ela sente saudade e gostaria da visita, mas não pede diretamente","Ela fez o bolo para comer sozinha mesmo"],c:1,
+     fbc:"O bolo favorito, os dois pratos na mesa e o 'sabe lá quando né' contam a verdade: ela esperava a visita e sente falta.",
+     fbw:"Olhe a foto que ela mandou: bolo favorito da neta e dois pratos arrumados. Quem faz isso esperava companhia. O 'não se preocupe' é para não incomodar."},
+  3:{ops:["Ela realmente achou a foto linda e está feliz pelas amigas","Ela está magoada por ter ficado de fora e disfarça com educação","Ela comentou só para ganhar curtidas"],c:1,
+     fbc:"Comentar em 1 minuto de madrugada mostra que ela acompanhava tudo. O 'parece que foi divertido' é a frase de quem ficou de fora olhando.",
+     fbw:"Repare: 1 minuto depois do post, de madrugada. Ela estava acompanhando. O tom educado do comentário esconde a dor de não ter sido chamada."},
+  4:{ops:["Ela ficou feliz em emprestar para a prima","Ela não queria emprestar mas não conseguiu dizer não","Ela quer que a prima fique com o moletom para sempre"],c:1,
+     fbc:"O 'Ah...' hesitante, a demora e as três mensagens de cuidado depois mostram que ela disse sim com a boca mas não com o coração.",
+     fbw:"Junte as pistas: hesitação no início, demora na resposta e três mensagens preocupadas depois. Quem empresta feliz não fica mandando instruções de cuidado."},
+  5:{ops:["Ele realmente mudou e não gosta mais de festas","Ele está magoado por não ser convidado e protege o orgulho","Ele está doente e não quis contar"],c:1,
+     fbc:"Dizer 'nem queria ir' dói menos que admitir a tristeza de não ser chamado. A pista forte é o contraste com quem ele sempre foi: o primeiro a chegar nas festas.",
+     fbw:"Pense no contraste: ele sempre amou festas e 'mudou' exatamente quando não foi convidado. Mudanças repentinas assim protegem o orgulho machucado."},
+  6:{ops:["Ela realmente não se importou, era só uma ida ao cinema","Ela deu liberdade de verdade mas ficou decepcionada","Ela ficou com raiva e vai castigar Alícia"],c:1,
+     fbc:"As duas coisas são verdade ao mesmo tempo: ela deixou a filha escolher de coração, mas a resposta curta, o 'Tá bom' e assistir o filme sozinha mostram a decepção.",
+     fbw:"Não é raiva nem indiferença. É algo mais sutil: ela deu liberdade genuína para a filha, mas ficou triste. Assistir o filme sozinha em casa é a pista que revela o quanto o programa importava."},
+  7:{ops:["Ele realmente esqueceu e está tudo bem","Ele lembra sim, ainda dói, e o comportamento dele mostra isso","Ele só está ocupado com o outro grupo de amigos"],c:1,
+     fbc:"Parou de usar o tênis, se afastou e recusou o almoço três vezes. Quando alguém diz 'já nem lembro' mas muda o comportamento desde o dia do ocorrido, a mágoa continua.",
+     fbw:"Olhe o comportamento desde aquele dia: nunca mais usou o tênis, parou de sentar perto e recusou três convites. Isso não é esquecimento, é mágoa em silêncio."},
+  8:{ops:["Com certeza ela está magoada e escondendo","Com certeza ela está de boa mesmo","Pode ser as duas coisas, e aqui o motivo legítimo torna o 'de boa' mais provável de ser verdadeiro"],c:2,
+     fbc:"Muito bem! Beatriz teve motivo real e avisou com educação. Sem exclusão nem injustiça, o 'de boa' tem boa chance de ser sincero. Detetive bom também sabe quando NÃO há pista escondida!",
+     fbw:"Cuidado com o radar sempre ligado! Aqui houve motivo real (dentista) e aviso educado. Nem toda resposta tranquila esconde mágoa. Saber isso também é ser um bom detetive."},
+};
+
+function buildQuizzes(){
+  Object.keys(QUIZ).forEach(k=>{
+    const q=QUIZ[k];
+    const container=document.getElementById('opcs'+k);
+    if(!container)return;
+    const shuffled=q.ops.map((o,j)=>({text:o,orig:j})).sort(()=>Math.random()-.5);
+    const newC=shuffled.findIndex(o=>o.orig===q.c);
+    container.innerHTML=shuffled.map((o,j)=>
+      `<button class="opcao" onclick="answerQ(${k},${j},${newC})"><span class="opc-ltr">${['A','B','C'][j]}</span>${o.text}</button>`
+    ).join('');
+  });
+}
+function answerQ(k,chosen,correct){
+  const q=QUIZ[k];
+  const btns=document.querySelectorAll('#opcs'+k+' .opcao');
+  btns.forEach(b=>b.disabled=true);
+  const fb=document.getElementById('fb'+k);
+  if(chosen===correct){
+    btns[chosen].classList.add('correta');
+    fb.className='fb-inline show fb-c';
+    fb.textContent='Isso mesmo! '+q.fbc;
+    addScore(10);
+  } else {
+    btns[chosen].classList.add('errada');
+    btns[correct].classList.add('revelada');
+    fb.className='fb-inline show fb-w';
+    fb.textContent='Quase! '+q.fbw;
+  }
+}
+function toggleGab(btn){
+  const gab=btn.parentElement.nextElementSibling;
+  const show=gab.classList.contains('show');
+  gab.classList.toggle('show');
+  btn.textContent=show?'Ver gabarito':'Fechar gabarito';
+}
+let secs=0,running=false,interval=null;
+function pad(n){return String(n).padStart(2,'0')}
+function updateT(){document.getElementById('timerVal').textContent=pad(Math.floor(secs/60))+':'+pad(secs%60)}
+function toggleTimer(){
+  const b=document.getElementById('timerBtn');
+  if(running){clearInterval(interval);running=false;b.textContent='Iniciar';}
+  else{running=true;b.textContent='Pausar';interval=setInterval(()=>{secs++;updateT();},1000);}
+}
+function resetTimer(){clearInterval(interval);running=false;secs=0;updateT();document.getElementById('timerBtn').textContent='Iniciar';}
+buildQuizzes();
+</script>
+</body>
+</html>
